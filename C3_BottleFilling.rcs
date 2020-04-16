@@ -1,0 +1,57 @@
+PROGR BottleFillingController
+{
+TACT 100;
+
+/*===========================================================*/
+/*=================== CONSTANTS =============================*/
+/*===========================================================*/
+
+CONST ON 1;
+CONST OFF 0;
+
+CONST INPUT_ADDR 0; /* IPORT ADDRESS */
+CONST OUTPUT_ADDR 1; /* OPORT ADDRESS */
+
+/*################################################*/
+/*################### PORTS ######################*/
+/*################################################*/
+INPUT  DI_PORT INPUT_ADDR 0 8; /* name, address, offset, size */
+OUTPUT DO_PORT OUTPUT_ADDR 0 8;
+
+/*##########################*/
+/*######## PROCESSES #######*/
+/*##########################*/
+
+PROC BottleFilling {
+/*===========================================================*/
+/*=========== VARIABLES =====================================*/
+/*===========================================================*/
+
+BOOL I_B_LEVEL        = {DI_PORT[1]} FOR ALL;
+BOOL I_F_STERILE    = {DI_PORT[1]} FOR ALL;               
+BOOL I_F_B_POSITION = {DI_PORT[1]} FOR ALL;               
+
+BOOL O_B_FILLING = {DO_PORT[1]} FOR ALL;
+BOOL O_F_B_FULL  = {DO_PORT[1]} FOR ALL;
+
+  STATE WaitLiquidAndPosition { 
+    IF ((I_F_STERILE == ON) && (I_F_B_POSITION == ON)) {
+      O_B_FILLING = ON;
+      SET NEXT;
+    }
+  }
+  STATE WaitBottleFilling { 
+    IF (I_B_LEVEL == ON) {
+      O_B_FILLING = OFF;
+      O_F_B_FULL = ON;
+      SET NEXT; 
+    } 
+  }
+  STATE WaitLowTemp { 
+    IF (I_F_B_POSITION == OFF) {
+      O_F_B_FULL = OFF;
+      RESTART; 
+    } 
+  }
+} /* END OF PROCESS */
+} /* END OF PROGRAM */

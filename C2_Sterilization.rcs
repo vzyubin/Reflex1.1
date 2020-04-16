@@ -1,0 +1,81 @@
+PROGR LiquidSterilizationController
+{
+TACT 100;
+
+/*===========================================================*/
+/*=================== CONSTANTS =============================*/
+/*===========================================================*/
+
+CONST ON 1;
+CONST OFF 0;
+
+CONST INPUT_ADDR 0; /* IPORT ADDRESS */
+CONST OUTPUT_ADDR 1; /* OPORT ADDRESS */
+
+/*################################################*/
+/*################### PORTS ######################*/
+/*################################################*/
+INPUT  DI_PORT INPUT_ADDR 0 8; /* name, address, offset, size */
+OUTPUT DO_PORT OUTPUT_ADDR 0 8;
+
+/*##########################*/
+/*######## PROCESSES #######*/
+/*##########################*/
+
+PROC SterilizationControl {
+/*===========================================================*/
+/*=========== VARIABLES =====================================*/
+/*===========================================================*/
+
+BOOL I_L_TEMP     = {DI_PORT[1]} FOR ALL;
+BOOL I_U_TEMP     = {DI_PORT[1]} FOR ALL;
+BOOL I_F_T_LEVEL  = {DI_PORT[1]} FOR ALL;
+
+BOOL O_STEAM     = {DO_PORT[1]} FOR ALL;
+BOOL O_F_STERILE = {DO_PORT[1]} FOR ALL;
+
+  STATE WaitLiquid { 
+    IF (I_F_T_LEVEL == ON) {
+      START PROC Sterilization;
+      SET NEXT; 
+    }
+  }
+  STATE WaitTankDepletion { 
+    IF (I_F_T_LEVEL == OFF) {
+      O_STEAM = OFF;
+      O_F_STERILE = OFF;
+      STOP PROC Sterilization;
+      RESTART; 
+    }
+  }
+} /* END OF PROCESS */
+
+PROC Sterilization {
+/*===========================================================*/
+/*=========== VARIABLES =====================================*/
+/*===========================================================*/
+
+FROM PROC SterilizationControl I_L_TEMP,
+                               I_U_TEMP,
+                               I_F_T_LEVEL,
+                               O_STEAM,
+                               O_F_STERILE;
+
+  STATE Begin { 
+    O_STEAM = ON;
+    SET NEXT;
+  }
+  STATE WaitUpperTemp { 
+    IF (I_U_TEMP == ON) {
+      O_STEAM = OFF;
+      O_F_STERILE = ON;
+      SET NEXT; 
+    } 
+  }
+  STATE WaitLowTemp { 
+    IF (I_L_TEMP == OFF) {
+      RESTART; 
+    } 
+  }
+} /* END OF PROCESS */
+} /* END OF PROGRAM */

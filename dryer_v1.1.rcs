@@ -1,0 +1,54 @@
+PROGR HandDryerController {
+/* REQ p1, p2, p3, p4;
+ IREQ ip; 
+ EREQ ep;
+*/
+
+ TACT 100;
+ CONST ON 1;
+ CONST OFF 0;
+ CONST MAX_WORKTIME 6000; /* 10 min */
+ INPUT  SENSOR_PORT  0 0 8; 
+ OUTPUT ACTUATOR_PORT 1 0 8; 
+  
+ PROC NormalWork {
+   BOOL hands = {SENSOR_PORT[1]} FOR ALL;
+   BOOL dryer = {ACTUATOR_PORT[1]} FOR ALL;
+
+   STATE WaitingHands {
+     IF (hands == ON) {
+       dryer = ON;
+       SET NEXT;
+     } ELSE {
+       dryer = OFF;
+       START PROC Watchdog;
+     }
+   }
+
+   STATE DRYING {
+     IF (hands == ON) RESET TIMEOUT;
+     TIMEOUT 10 {
+       dryer = OFF;
+       RESTART; 
+     }
+   }
+ }
+
+ PROC Watchdog {
+   FROM PROC NormalWork dryer, hands; /* ref to the var descr */
+
+   STATE CheckTimeout {
+     TIMEOUT MAX_WORKTIME {
+       dryer = OFF;
+       STOP PROC NormalWork; 
+       SET NEXT;
+     }
+   }
+   STATE CheckHandsOff {
+     IF (hands == OFF) {
+       START PROC NormalWork; 
+       RESTART;
+     }
+   }
+ }
+}

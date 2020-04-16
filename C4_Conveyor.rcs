@@ -1,0 +1,61 @@
+PROGR ConveyorController
+{
+TACT 100;
+
+/*===========================================================*/
+/*=================== CONSTANTS =============================*/
+/*===========================================================*/
+
+CONST ON 1;
+CONST OFF 0;
+
+CONST INPUT_ADDR 0; /* IPORT ADDRESS */
+CONST OUTPUT_ADDR 1; /* OPORT ADDRESS */
+
+/*################################################*/
+/*################### PORTS ######################*/
+/*################################################*/
+INPUT  DI_PORT INPUT_ADDR 0 8; /* name, address, offset, size */
+OUTPUT DO_PORT OUTPUT_ADDR 0 8;
+
+/*##########################*/
+/*######## PROCESSES #######*/
+/*##########################*/
+
+PROC Conveyor {
+/*===========================================================*/
+/*=========== VARIABLES =====================================*/
+/*===========================================================*/
+
+BOOL I_B_POSITION  = {DI_PORT[1]} FOR ALL;
+BOOL I_F_B_FULL    = {DI_PORT[1]} FOR ALL;
+
+BOOL O_CONVEYOR     = {DO_PORT[1]} FOR ALL;
+BOOL O_F_B_POSITION = {DO_PORT[1]} FOR ALL;               
+
+
+  STATE Begin { 
+    O_CONVEYOR = ON;
+    SET NEXT;
+  }
+  STATE WaitBottlePosition { 
+    IF (I_B_POSITION == ON) {
+      O_CONVEYOR = OFF;
+      O_F_B_POSITION = ON;
+      SET NEXT;
+    }
+  }
+  STATE WaitBottleFilling { 
+    IF (I_F_B_FULL == ON) {
+      O_CONVEYOR = ON;
+      SET NEXT;
+    } 
+  }
+  STATE WaitBottleDisappearance { 
+    IF (I_B_POSITION == OFF) {
+      O_F_B_POSITION = OFF;
+      RESTART; 
+    } 
+  }
+} /* END OF PROCESS */
+} /* END OF PROGRAM */

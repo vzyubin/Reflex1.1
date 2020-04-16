@@ -1,0 +1,73 @@
+PROGR TankFillingController
+{
+/* =========================== */
+/* == ANNOTATIONS:             */
+/* INV inv;                    */
+/* ICON icon;                  */
+/* ECON econ;                  */
+/* == END OF ANNOTATIONS       */
+
+TACT 100;
+
+/*===========================================================*/
+/*=================== CONSTANTS =============================*/
+/*===========================================================*/
+
+CONST ON 1;
+CONST OFF 0;
+
+CONST INPUT_ADDR 0; /* IPORT ADDRESS */
+CONST OUTPUT_ADDR 1; /* OPORT ADDRESS */
+
+/*################################################*/
+/*################### PORTS ######################*/
+/*################################################*/
+INPUT  DI_PORT INPUT_ADDR 0 8; /* name, address, offset, size */
+OUTPUT DO_PORT OUTPUT_ADDR 0 8;
+
+/*##########################*/
+/*######## PROCESSES #######*/
+/*##########################*/
+
+PROC TankFilling{
+/*===========================================================*/
+/*=========== VARIABLES =====================================*/
+/*===========================================================*/
+
+BOOL I_L_LEVEL      = {DI_PORT[1]} FOR ALL;
+BOOL I_U_LEVEL      = {DI_PORT[1]} FOR ALL;
+BOOL I_F_B_POSITION = {DI_PORT[1]} FOR ALL;               
+
+
+BOOL O_T_INFLOW  = {DO_PORT[1]} FOR ALL;
+BOOL O_F_T_LEVEL = {DO_PORT[1]} FOR ALL;
+
+  STATE Begin { 
+    IF (I_L_LEVEL == ON) {
+      O_F_T_LEVEL = ON;
+      SET NEXT; 
+    } ELSE {
+      SET STATE TankFilling;
+    }
+  }
+  STATE WaitLowLevel { 
+    IF (I_L_LEVEL == OFF) {
+      O_F_T_LEVEL = OFF;
+      SET NEXT; 
+    } 
+  }
+  STATE WaitPosition { 
+    IF (I_F_B_POSITION == OFF) {
+      SET NEXT;
+    }
+  }
+  STATE TankFilling { 
+    O_T_INFLOW = ON;
+    IF (I_U_LEVEL == ON) {
+      O_T_INFLOW = OFF;
+      O_F_T_LEVEL = ON;
+      SET STATE WaitLowLevel; 
+    } 
+  }
+} /* END OF PROCESS */
+} /* END OF PROGRAM */

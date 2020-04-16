@@ -1,0 +1,28 @@
+PROGR HandDryerController {
+  TACT 100;
+  CONST ON 1;
+  CONST OFF 0; /* direction, name, address, offset, size of the port */
+  INPUT SENSOR_INPUT_PORT 0 0 8; /* IR sensor input port */
+  OUTPUT ACTUATOR_OUTPUT_PORT 1 0 8; /* output to heater and fan*/
+  PROC Init {
+    BOOL S_HANDS_UNDER_DRYER = { SENSOR_INPUT_PORT [1] } FOR ALL;
+    BOOL C_TURN_ON_DRYER = { ACTUATOR_OUTPUT_PORT [1] } FOR ALL;
+    STATE Waiting {
+      IF (S_HANDS_UNDER_DRYER == ON) { 
+        C_TURN_ON_DRYER = ON;
+        SET NEXT;
+      } ELSE {
+        C_TURN_ON_DRYER = OFF;
+      }
+    }
+    STATE Drying {
+      IF (S_HANDS_UNDER_DRYER == ON) RESTART; /* RESET TIMEOUT; */
+      IF (S_HANDS_UNDER_DRYER == ON) RESET TIMEOUT;
+      IF (S_HANDS_UNDER_DRYER == ON) SET STATE Drying; /* RESET TIMEOUT; */
+      IF (PROC Init IN STATE ERROR) SET STATE Drying; /* RESET TIMEOUT; */
+      TIMEOUT 10 { SET STATE Waiting; }
+    }
+  } /* \PROC */
+} /* \PROGRAM */
+
+
